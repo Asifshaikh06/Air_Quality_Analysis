@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Air Quality Report 2024</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;background:#f0f2f7;color:#1e2432}
+
+/* ── TOPBAR ── */
+.topbar{
+  height:46px;background:#1a3a6c;display:flex;align-items:center;
+  justify-content:space-between;padding:0 18px;flex-shrink:0;
+}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-logo{
+  width:28px;height:28px;background:#ffffff22;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:14px
+}
+.topbar-title{color:#fff;font-size:13.5px;font-weight:700;letter-spacing:.2px}
+.topbar-sub{color:#a8c0e8;font-size:11px;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.topbar-pill{
+  background:#ffffff18;border:1px solid #ffffff25;color:#c8d9f0;
+  font-size:10.5px;padding:3px 10px;border-radius:4px;font-weight:500
+}
+.topbar-pill.green{background:#16a34a22;border-color:#16a34a55;color:#86efac}
+
+/* ── FILTERBAR ── */
+.filterbar{
+  height:40px;background:#fff;border-bottom:1px solid #dde1ea;
+  display:flex;align-items:center;padding:0 14px;gap:20px;flex-shrink:0
+}
+.filter-section{display:flex;align-items:center;gap:6px}
+.filter-label{font-size:10.5px;color:#6b7a99;font-weight:600;white-space:nowrap}
+.chip{
+  padding:3px 10px;border-radius:3px;border:1px solid #d1d5e0;
+  background:#f7f8fc;font-size:10.5px;color:#4a5568;cursor:pointer;
+  font-weight:500;transition:all .15s;white-space:nowrap;font-family:inherit
+}
+.chip:hover{border-color:#1a3a6c;color:#1a3a6c;background:#eef3fc}
+.chip.active{background:#1a3a6c;border-color:#1a3a6c;color:#fff}
+.filter-sep{width:1px;height:20px;background:#dde1ea;flex-shrink:0}
+.clear-btn{
+  margin-left:auto;font-size:10.5px;color:#6b7a99;cursor:pointer;
+  font-weight:500;padding:3px 8px;border-radius:3px;border:1px solid transparent;
+  font-family:inherit;background:none
+}
+.clear-btn:hover{border-color:#d1d5e0;background:#f7f8fc;color:#1a3a6c}
+
+/* ── BODY ── */
+.body{
+  height:calc(100vh - 86px);display:flex;flex-direction:column;
+  padding:10px 12px 8px;gap:8px;overflow:hidden
+}
+
+/* ── KPI ROW ── */
+.kpi-row{display:flex;gap:8px;flex-shrink:0;height:82px}
+.kpi{
+  flex:1;background:#fff;border-radius:5px;padding:11px 14px;
+  border:1px solid #e2e6ef;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:space-between
+}
+.kpi::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--kc,#1a3a6c);border-radius:5px 0 0 5px
+}
+.kpi-val{font-size:22px;font-weight:700;color:var(--kc,#1a3a6c);line-height:1}
+.kpi-lbl{font-size:10px;color:#6b7a99;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.kpi-foot{font-size:9.5px;color:#9ba3b8}
+.kpi-badge{
+  position:absolute;top:10px;right:10px;font-size:9.5px;font-weight:600;
+  padding:2px 6px;border-radius:3px
+}
+.kpi-badge.warn{background:#fef3c7;color:#d97706}
+.kpi-badge.bad{background:#fee2e2;color:#dc2626}
+.kpi-badge.ok{background:#dcfce7;color:#16a34a}
+.kpi-badge.info{background:#eff6ff;color:#2563eb}
+
+/* ── CHARTS AREA ── */
+.charts-area{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
+.chart-row{display:flex;gap:8px;flex:1;min-height:0}
+
+.panel{
+  background:#fff;border-radius:5px;border:1px solid #e2e6ef;
+  display:flex;flex-direction:column;padding:11px 13px;overflow:hidden
+}
+.panel.w3{flex:3}
+.panel.w2{flex:2}
+.panel.w25{flex:2.5}
+
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;flex-shrink:0
+}
+.panel-title{font-size:11.5px;font-weight:700;color:#1e2432}
+.panel-sub{font-size:9.5px;color:#9ba3b8;margin-top:1px}
+.panel-tag{
+  font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:3px;
+  background:#f0f4ff;color:#2563eb;border:1px solid #dbeafe
+}
+
+.chart-wrap{flex:1;position:relative;min-height:0}
+.chart-wrap canvas{position:absolute;inset:0}
+
+/* ── STATUSBAR ── */
+.statusbar{
+  height:24px;background:#fff;border-top:1px solid #dde1ea;
+  display:flex;align-items:center;padding:0 14px;gap:16px;flex-shrink:0;
+  font-size:9.5px;color:#9ba3b8;font-weight:500
+}
+.statusbar span{display:flex;align-items:center;gap:4px}
+.statusbar span b{color:#4a5568}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+
+/* ── LEGEND ── */
+.mini-legend{
+  display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;flex-shrink:0
+}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:9.5px;color:#4a5568}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* AQI color legend row */
+.aqi-legend{display:flex;gap:6px;flex-shrink:0;margin-bottom:6px}
+.aqi-leg{
+  display:flex;align-items:center;gap:4px;font-size:9.5px;
+  padding:2px 7px;border-radius:3px;font-weight:600
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">🌫️</div>
+    <div>
+      <div class="topbar-title">India Air Quality Analysis — 2024</div>
+      <div class="topbar-sub">Jan 01 → May 29 &nbsp;·&nbsp; 7 Cities &nbsp;·&nbsp; 150 Readings</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-pill">PM2.5 &nbsp;·&nbsp; PM10 &nbsp;·&nbsp; NO₂ &nbsp;·&nbsp; SO₂ &nbsp;·&nbsp; CO &nbsp;·&nbsp; O₃</div>
+    <div class="topbar-pill green" id="liveStat">⬤ &nbsp;64% Unhealthy</div>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filterbar">
+  <div class="filter-section">
+    <span class="filter-label">CITY</span>
+    <button class="chip active" onclick="setF('city','All')">All</button>
+    <button class="chip" onclick="setF('city','Bangalore')">Bangalore</button>
+    <button class="chip" onclick="setF('city','Chennai')">Chennai</button>
+    <button class="chip" onclick="setF('city','Delhi')">Delhi</button>
+    <button class="chip" onclick="setF('city','Hyderabad')">Hyderabad</button>
+    <button class="chip" onclick="setF('city','Kolkata')">Kolkata</button>
+    <button class="chip" onclick="setF('city','Mumbai')">Mumbai</button>
+    <button class="chip" onclick="setF('city','Pune')">Pune</button>
+  </div>
+  <div class="filter-sep"></div>
+  <div class="filter-section">
+    <span class="filter-label">MONTH</span>
+    <button class="chip active" onclick="setF('month','All')">All</button>
+    <button class="chip" onclick="setF('month','Jan')">Jan</button>
+    <button class="chip" onclick="setF('month','Feb')">Feb</button>
+    <button class="chip" onclick="setF('month','Mar')">Mar</button>
+    <button class="chip" onclick="setF('month','Apr')">Apr</button>
+    <button class="chip" onclick="setF('month','May')">May</button>
+  </div>
+  <div class="filter-sep"></div>
+  <div class="filter-section">
+    <span class="filter-label">AQI</span>
+    <button class="chip active" onclick="setF('aqi','All')">All</button>
+    <button class="chip" onclick="setF('aqi','Good')" style="color:#16a34a">Good</button>
+    <button class="chip" onclick="setF('aqi','Moderate')" style="color:#d97706">Moderate</button>
+    <button class="chip" onclick="setF('aqi','Unhealthy (Sensitive)')" style="color:#ea580c">Sensitive</button>
+    <button class="chip" onclick="setF('aqi','Unhealthy')" style="color:#dc2626">Unhealthy</button>
+    <button class="chip" onclick="setF('aqi','Very Unhealthy')" style="color:#7c3aed">Very Unhealthy</button>
+  </div>
+  <button class="clear-btn" onclick="resetFilters()">✕ Reset</button>
+</div>
+
+<!-- MAIN BODY -->
+<div class="body">
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi" style="--kc:#1a3a6c">
+      <div class="kpi-lbl">Avg PM2.5</div>
+      <div class="kpi-val" id="k1">99.3</div>
+      <div class="kpi-foot" id="k1f">WHO safe: 15 µg/m³</div>
+      <div class="kpi-badge warn" id="k1b">6.6× limit</div>
+    </div>
+    <div class="kpi" style="--kc:#0369a1">
+      <div class="kpi-lbl">Avg PM10</div>
+      <div class="kpi-val" id="k2">126.6</div>
+      <div class="kpi-foot">WHO safe: 45 µg/m³</div>
+      <div class="kpi-badge warn">2.8× limit</div>
+    </div>
+    <div class="kpi" style="--kc:#dc2626">
+      <div class="kpi-lbl">Peak PM2.5</div>
+      <div class="kpi-val" id="k3">179.9</div>
+      <div class="kpi-foot" id="k3f">Pune · Feb 29</div>
+      <div class="kpi-badge bad">Very Unhealthy</div>
+    </div>
+    <div class="kpi" style="--kc:#16a34a">
+      <div class="kpi-lbl">Best PM2.5</div>
+      <div class="kpi-val" id="k4">20.9</div>
+      <div class="kpi-foot" id="k4f">Chennai · Jan 9</div>
+      <div class="kpi-badge ok">Moderate</div>
+    </div>
+    <div class="kpi" style="--kc:#7c3aed">
+      <div class="kpi-lbl">Unhealthy Days</div>
+      <div class="kpi-val" id="k5">79.3%</div>
+      <div class="kpi-foot" id="k5f">119 of 150 readings</div>
+      <div class="kpi-badge bad" id="k5b">High Risk</div>
+    </div>
+    <div class="kpi" style="--kc:#0891b2">
+      <div class="kpi-lbl">Avg NO₂</div>
+      <div class="kpi-val" id="k6">45.2</div>
+      <div class="kpi-foot">µg/m³ overall</div>
+      <div class="kpi-badge info">Tracked</div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 1 -->
+  <div class="chart-row">
+
+    <!-- Bar: Avg PM2.5 by City -->
+    <div class="panel w3">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Avg PM2.5 by City (µg/m³)</div>
+          <div class="panel-sub">Horizontal bar — ranked highest to lowest</div>
+        </div>
+        <div class="panel-tag">Bar</div>
+      </div>
+      <div class="chart-wrap"><canvas id="cBar"></canvas></div>
+    </div>
+
+    <!-- Donut: AQI Distribution -->
+    <div class="panel w2">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">AQI Category Split</div>
+          <div class="panel-sub">By PM2.5 (US-EPA breakpoints)</div>
+        </div>
+        <div class="panel-tag">Donut</div>
+      </div>
+      <div class="aqi-legend">
+        <span class="aqi-leg" style="background:#dcfce7;color:#16a34a">Good</span>
+        <span class="aqi-leg" style="background:#fef3c7;color:#d97706">Mod</span>
+        <span class="aqi-leg" style="background:#ffedd5;color:#ea580c">Sens</span>
+        <span class="aqi-leg" style="background:#fee2e2;color:#dc2626">Unhealthy</span>
+        <span class="aqi-leg" style="background:#ede9fe;color:#7c3aed">Very</span>
+      </div>
+      <div class="chart-wrap"><canvas id="cDonut"></canvas></div>
+    </div>
+
+    <!-- Line: Monthly Trend -->
+    <div class="panel w3">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Monthly PM2.5 Trend by City</div>
+          <div class="panel-sub">Jan – May 2024</div>
+        </div>
+        <div class="panel-tag">Line</div>
+      </div>
+      <div class="mini-legend" id="lineLegend"></div>
+      <div class="chart-wrap"><canvas id="cLine"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- CHART ROW 2 -->
+  <div class="chart-row">
+
+    <!-- Stacked: AQI per City -->
+    <div class="panel w25">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">AQI Category Count per City</div>
+          <div class="panel-sub">Stacked — number of days per category</div>
+        </div>
+        <div class="panel-tag">Stacked</div>
+      </div>
+      <div class="chart-wrap"><canvas id="cStacked"></canvas></div>
+    </div>
+
+    <!-- Grouped: NO2, SO2, O3 -->
+    <div class="panel w25">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Pollutant Comparison — NO₂ · SO₂ · O₃</div>
+          <div class="panel-sub">Average per city (µg/m³)</div>
+        </div>
+        <div class="panel-tag">Grouped</div>
+      </div>
+      <div class="chart-wrap"><canvas id="cGrouped"></canvas></div>
+    </div>
+
+    <!-- Scatter: Wind vs PM2.5 -->
+    <div class="panel w2">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Wind Speed vs PM2.5</div>
+          <div class="panel-sub">Dispersion effect analysis</div>
+        </div>
+        <div class="panel-tag">Scatter</div>
+      </div>
+      <div class="chart-wrap"><canvas id="cScatter"></canvas></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <span><b id="sb1">150</b>&nbsp;records</span>
+  <span><div class="dot" style="background:#1a3a6c"></div>&nbsp;Filter: <b id="sb2">All Cities</b></span>
+  <span><div class="dot" style="background:#0891b2"></div>&nbsp;Month: <b id="sb3">All</b></span>
+  <span><div class="dot" style="background:#7c3aed"></div>&nbsp;AQI: <b id="sb4">All</b></span>
+  <span style="margin-left:auto;color:#c4c9d4">India Air Quality 2024 · Data: 7 cities · Page 1 of 1</span>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+//  DATASET
+// ──────────────────────────────────────────────
+const D=[{"City":"Pune","Date":"2024-01-01","PM2.5":79.93,"PM10":211.13,"NO2":68.56,"SO2":37.93,"CO":0.64,"O3":27.16,"Temperature":19.2,"Humidity":77.6,"Wind Speed":4.1,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-01-02","PM2.5":133.29,"PM10":43.71,"NO2":87.59,"SO2":50.78,"CO":0.77,"O3":30.0,"Temperature":21.7,"Humidity":46.7,"Wind Speed":3.6,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-01-03","PM2.5":89.11,"PM10":92.42,"NO2":58.95,"SO2":12.67,"CO":0.94,"O3":50.3,"Temperature":27.1,"Humidity":73.2,"Wind Speed":1.7,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-01-04","PM2.5":102.28,"PM10":146.63,"NO2":13.72,"SO2":38.41,"CO":0.68,"O3":17.16,"Temperature":37.0,"Humidity":83.1,"Wind Speed":5.4,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-01-05","PM2.5":68.74,"PM10":57.58,"NO2":64.74,"SO2":29.21,"CO":0.57,"O3":64.47,"Temperature":18.7,"Humidity":80.0,"Wind Speed":2.1,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-01-06","PM2.5":126.0,"PM10":96.11,"NO2":51.61,"SO2":35.07,"CO":0.71,"O3":116.65,"Temperature":33.5,"Humidity":81.7,"Wind Speed":5.9,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-01-07","PM2.5":115.66,"PM10":205.94,"NO2":17.08,"SO2":15.78,"CO":0.4,"O3":45.79,"Temperature":25.8,"Humidity":44.9,"Wind Speed":5.5,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-01-08","PM2.5":77.08,"PM10":90.57,"NO2":53.42,"SO2":12.75,"CO":2.06,"O3":18.2,"Temperature":37.7,"Humidity":72.5,"Wind Speed":1.7,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-01-09","PM2.5":20.88,"PM10":186.78,"NO2":66.55,"SO2":45.1,"CO":2.0,"O3":18.14,"Temperature":25.2,"Humidity":36.4,"Wind Speed":5.7,"Month":"Jan","AQI_Category":"Moderate"},{"City":"Pune","Date":"2024-01-10","PM2.5":119.73,"PM10":99.56,"NO2":15.08,"SO2":22.1,"CO":1.02,"O3":90.26,"Temperature":30.8,"Humidity":78.8,"Wind Speed":3.3,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-01-11","PM2.5":39.14,"PM10":168.38,"NO2":70.86,"SO2":35.87,"CO":2.0,"O3":64.32,"Temperature":28.5,"Humidity":53.5,"Wind Speed":0.7,"Month":"Jan","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Pune","Date":"2024-01-12","PM2.5":37.26,"PM10":45.66,"NO2":60.91,"SO2":22.29,"CO":1.42,"O3":109.83,"Temperature":23.0,"Humidity":52.6,"Wind Speed":5.0,"Month":"Jan","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Chennai","Date":"2024-01-13","PM2.5":56.61,"PM10":53.86,"NO2":33.18,"SO2":13.87,"CO":2.35,"O3":98.89,"Temperature":30.7,"Humidity":77.9,"Wind Speed":5.3,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-01-14","PM2.5":49.85,"PM10":200.66,"NO2":53.15,"SO2":49.41,"CO":2.27,"O3":44.98,"Temperature":20.2,"Humidity":42.5,"Wind Speed":3.1,"Month":"Jan","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Bangalore","Date":"2024-01-15","PM2.5":150.88,"PM10":194.93,"NO2":10.56,"SO2":33.09,"CO":1.22,"O3":34.43,"Temperature":20.4,"Humidity":48.6,"Wind Speed":6.2,"Month":"Jan","AQI_Category":"Very Unhealthy"},{"City":"Chennai","Date":"2024-01-16","PM2.5":71.71,"PM10":133.38,"NO2":66.24,"SO2":25.0,"CO":2.44,"O3":115.87,"Temperature":23.0,"Humidity":57.3,"Wind Speed":2.3,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-01-17","PM2.5":65.57,"PM10":46.64,"NO2":58.77,"SO2":32.65,"CO":0.41,"O3":40.65,"Temperature":36.2,"Humidity":43.2,"Wind Speed":1.4,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-01-18","PM2.5":98.31,"PM10":217.42,"NO2":29.36,"SO2":41.97,"CO":1.98,"O3":36.14,"Temperature":32.6,"Humidity":50.2,"Wind Speed":4.3,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-01-19","PM2.5":121.36,"PM10":136.44,"NO2":17.22,"SO2":50.94,"CO":1.01,"O3":30.52,"Temperature":18.8,"Humidity":62.5,"Wind Speed":4.6,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-01-20","PM2.5":22.65,"PM10":132.18,"NO2":28.12,"SO2":40.48,"CO":0.68,"O3":86.0,"Temperature":25.7,"Humidity":81.5,"Wind Speed":1.3,"Month":"Jan","AQI_Category":"Moderate"},{"City":"Hyderabad","Date":"2024-01-21","PM2.5":74.57,"PM10":60.43,"NO2":83.98,"SO2":53.25,"CO":0.87,"O3":82.6,"Temperature":34.3,"Humidity":60.5,"Wind Speed":3.7,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-01-22","PM2.5":58.7,"PM10":56.76,"NO2":81.78,"SO2":54.52,"CO":1.69,"O3":47.29,"Temperature":25.0,"Humidity":69.9,"Wind Speed":5.9,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-01-23","PM2.5":161.93,"PM10":180.38,"NO2":61.36,"SO2":9.63,"CO":0.66,"O3":108.84,"Temperature":30.1,"Humidity":30.5,"Wind Speed":1.1,"Month":"Jan","AQI_Category":"Very Unhealthy"},{"City":"Bangalore","Date":"2024-01-24","PM2.5":126.16,"PM10":40.91,"NO2":22.86,"SO2":35.18,"CO":1.82,"O3":81.72,"Temperature":22.5,"Humidity":69.2,"Wind Speed":1.9,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-01-25","PM2.5":72.06,"PM10":174.37,"NO2":61.97,"SO2":51.71,"CO":1.75,"O3":72.51,"Temperature":19.9,"Humidity":50.2,"Wind Speed":2.1,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-01-26","PM2.5":59.04,"PM10":215.14,"NO2":41.45,"SO2":54.06,"CO":1.69,"O3":97.43,"Temperature":28.1,"Humidity":61.7,"Wind Speed":3.5,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-01-27","PM2.5":51.24,"PM10":170.04,"NO2":32.46,"SO2":6.34,"CO":1.72,"O3":29.48,"Temperature":36.8,"Humidity":82.5,"Wind Speed":6.0,"Month":"Jan","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Hyderabad","Date":"2024-01-28","PM2.5":79.23,"PM10":42.78,"NO2":84.27,"SO2":28.55,"CO":2.43,"O3":116.0,"Temperature":35.1,"Humidity":46.2,"Wind Speed":2.8,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-01-29","PM2.5":156.18,"PM10":97.05,"NO2":23.56,"SO2":35.62,"CO":2.36,"O3":86.56,"Temperature":29.4,"Humidity":35.3,"Wind Speed":4.2,"Month":"Jan","AQI_Category":"Very Unhealthy"},{"City":"Mumbai","Date":"2024-01-30","PM2.5":178.41,"PM10":65.22,"NO2":51.47,"SO2":53.26,"CO":1.93,"O3":86.67,"Temperature":32.0,"Humidity":49.8,"Wind Speed":2.3,"Month":"Jan","AQI_Category":"Very Unhealthy"},{"City":"Bangalore","Date":"2024-01-31","PM2.5":149.5,"PM10":185.82,"NO2":79.37,"SO2":55.23,"CO":1.42,"O3":65.17,"Temperature":34.0,"Humidity":65.7,"Wind Speed":4.7,"Month":"Jan","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-02-01","PM2.5":147.33,"PM10":200.2,"NO2":37.04,"SO2":25.66,"CO":0.51,"O3":73.61,"Temperature":18.7,"Humidity":55.6,"Wind Speed":3.8,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-02-02","PM2.5":65.85,"PM10":146.35,"NO2":12.44,"SO2":7.05,"CO":2.11,"O3":49.62,"Temperature":20.5,"Humidity":58.7,"Wind Speed":5.1,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-02-03","PM2.5":54.53,"PM10":152.12,"NO2":16.83,"SO2":7.84,"CO":1.47,"O3":69.47,"Temperature":30.7,"Humidity":69.9,"Wind Speed":6.4,"Month":"Feb","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Bangalore","Date":"2024-02-04","PM2.5":102.61,"PM10":98.13,"NO2":73.61,"SO2":19.9,"CO":1.27,"O3":18.63,"Temperature":18.5,"Humidity":82.9,"Wind Speed":5.5,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-02-05","PM2.5":131.36,"PM10":113.61,"NO2":23.86,"SO2":13.6,"CO":0.85,"O3":70.41,"Temperature":32.3,"Humidity":66.3,"Wind Speed":2.2,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-02-06","PM2.5":172.78,"PM10":172.82,"NO2":54.35,"SO2":38.64,"CO":1.22,"O3":37.25,"Temperature":25.1,"Humidity":71.7,"Wind Speed":0.6,"Month":"Feb","AQI_Category":"Very Unhealthy"},{"City":"Bangalore","Date":"2024-02-07","PM2.5":38.57,"PM10":48.28,"NO2":13.26,"SO2":52.05,"CO":1.85,"O3":62.16,"Temperature":20.0,"Humidity":57.0,"Wind Speed":3.3,"Month":"Feb","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Kolkata","Date":"2024-02-08","PM2.5":47.71,"PM10":118.09,"NO2":41.88,"SO2":38.87,"CO":1.7,"O3":14.98,"Temperature":25.5,"Humidity":64.4,"Wind Speed":3.5,"Month":"Feb","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Hyderabad","Date":"2024-02-09","PM2.5":157.04,"PM10":158.56,"NO2":23.03,"SO2":8.88,"CO":1.71,"O3":12.92,"Temperature":29.7,"Humidity":81.7,"Wind Speed":4.0,"Month":"Feb","AQI_Category":"Very Unhealthy"},{"City":"Mumbai","Date":"2024-02-10","PM2.5":82.11,"PM10":155.79,"NO2":46.66,"SO2":35.01,"CO":2.37,"O3":52.47,"Temperature":37.2,"Humidity":79.8,"Wind Speed":1.7,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-02-11","PM2.5":31.1,"PM10":58.14,"NO2":11.46,"SO2":10.19,"CO":1.8,"O3":17.83,"Temperature":24.4,"Humidity":76.5,"Wind Speed":0.6,"Month":"Feb","AQI_Category":"Moderate"},{"City":"Bangalore","Date":"2024-02-12","PM2.5":150.31,"PM10":90.73,"NO2":19.45,"SO2":43.32,"CO":1.68,"O3":106.52,"Temperature":32.7,"Humidity":74.2,"Wind Speed":2.2,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-02-13","PM2.5":48.39,"PM10":175.11,"NO2":74.55,"SO2":59.48,"CO":1.21,"O3":50.92,"Temperature":33.5,"Humidity":48.7,"Wind Speed":6.1,"Month":"Feb","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Pune","Date":"2024-02-14","PM2.5":157.35,"PM10":117.22,"NO2":70.07,"SO2":46.5,"CO":0.53,"O3":109.28,"Temperature":28.1,"Humidity":75.5,"Wind Speed":2.4,"Month":"Feb","AQI_Category":"Very Unhealthy"},{"City":"Chennai","Date":"2024-02-15","PM2.5":163.28,"PM10":110.06,"NO2":10.87,"SO2":54.8,"CO":0.5,"O3":45.12,"Temperature":37.0,"Humidity":82.3,"Wind Speed":3.9,"Month":"Feb","AQI_Category":"Very Unhealthy"},{"City":"Chennai","Date":"2024-02-16","PM2.5":121.09,"PM10":120.72,"NO2":33.46,"SO2":23.08,"CO":1.78,"O3":92.76,"Temperature":33.8,"Humidity":73.4,"Wind Speed":1.0,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-02-17","PM2.5":99.11,"PM10":50.36,"NO2":53.96,"SO2":29.28,"CO":2.25,"O3":48.6,"Temperature":20.3,"Humidity":37.9,"Wind Speed":5.1,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-02-18","PM2.5":118.91,"PM10":58.2,"NO2":16.73,"SO2":43.55,"CO":0.46,"O3":100.4,"Temperature":32.1,"Humidity":34.5,"Wind Speed":1.0,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-02-19","PM2.5":177.86,"PM10":107.37,"NO2":39.65,"SO2":49.7,"CO":2.38,"O3":118.46,"Temperature":33.1,"Humidity":50.7,"Wind Speed":1.0,"Month":"Feb","AQI_Category":"Very Unhealthy"},{"City":"Bangalore","Date":"2024-02-20","PM2.5":144.34,"PM10":140.51,"NO2":43.94,"SO2":54.85,"CO":0.54,"O3":64.19,"Temperature":18.2,"Humidity":55.8,"Wind Speed":0.8,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-02-21","PM2.5":39.01,"PM10":61.15,"NO2":61.94,"SO2":46.03,"CO":1.58,"O3":115.84,"Temperature":25.5,"Humidity":45.7,"Wind Speed":5.7,"Month":"Feb","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Kolkata","Date":"2024-02-22","PM2.5":55.78,"PM10":213.38,"NO2":10.97,"SO2":58.34,"CO":0.39,"O3":108.03,"Temperature":28.6,"Humidity":84.6,"Wind Speed":0.9,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-02-23","PM2.5":108.62,"PM10":214.47,"NO2":51.85,"SO2":39.62,"CO":1.83,"O3":60.0,"Temperature":30.6,"Humidity":62.1,"Wind Speed":5.9,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-02-24","PM2.5":27.27,"PM10":90.57,"NO2":86.03,"SO2":53.96,"CO":1.3,"O3":78.21,"Temperature":23.5,"Humidity":40.3,"Wind Speed":3.3,"Month":"Feb","AQI_Category":"Moderate"},{"City":"Mumbai","Date":"2024-02-25","PM2.5":76.54,"PM10":145.06,"NO2":16.22,"SO2":58.59,"CO":2.47,"O3":86.8,"Temperature":28.7,"Humidity":47.0,"Wind Speed":5.4,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-02-26","PM2.5":129.56,"PM10":69.27,"NO2":82.87,"SO2":50.24,"CO":2.39,"O3":89.83,"Temperature":30.3,"Humidity":53.0,"Wind Speed":6.1,"Month":"Feb","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-02-27","PM2.5":158.57,"PM10":48.14,"NO2":12.11,"SO2":25.71,"CO":2.08,"O3":118.6,"Temperature":21.0,"Humidity":62.7,"Wind Speed":2.8,"Month":"Feb","AQI_Category":"Very Unhealthy"},{"City":"Delhi","Date":"2024-02-28","PM2.5":175.19,"PM10":191.58,"NO2":77.07,"SO2":30.78,"CO":1.21,"O3":40.07,"Temperature":19.1,"Humidity":77.6,"Wind Speed":5.4,"Month":"Feb","AQI_Category":"Very Unhealthy"},{"City":"Pune","Date":"2024-02-29","PM2.5":179.95,"PM10":219.39,"NO2":54.43,"SO2":47.29,"CO":2.38,"O3":103.46,"Temperature":22.9,"Humidity":54.8,"Wind Speed":1.3,"Month":"Feb","AQI_Category":"Very Unhealthy"},{"City":"Chennai","Date":"2024-03-01","PM2.5":172.65,"PM10":149.11,"NO2":28.29,"SO2":41.94,"CO":1.66,"O3":49.4,"Temperature":20.3,"Humidity":66.9,"Wind Speed":3.6,"Month":"Mar","AQI_Category":"Very Unhealthy"},{"City":"Mumbai","Date":"2024-03-02","PM2.5":143.57,"PM10":133.63,"NO2":78.17,"SO2":35.35,"CO":1.53,"O3":106.43,"Temperature":26.1,"Humidity":37.4,"Wind Speed":0.7,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-03-03","PM2.5":140.82,"PM10":151.66,"NO2":66.33,"SO2":16.71,"CO":0.6,"O3":11.6,"Temperature":25.0,"Humidity":62.4,"Wind Speed":2.9,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-03-04","PM2.5":90.0,"PM10":202.75,"NO2":37.86,"SO2":33.27,"CO":2.02,"O3":53.62,"Temperature":30.4,"Humidity":77.4,"Wind Speed":6.2,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-03-05","PM2.5":43.53,"PM10":206.79,"NO2":49.37,"SO2":19.2,"CO":1.31,"O3":117.8,"Temperature":27.9,"Humidity":48.1,"Wind Speed":4.3,"Month":"Mar","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Hyderabad","Date":"2024-03-06","PM2.5":58.42,"PM10":53.66,"NO2":20.31,"SO2":12.04,"CO":0.63,"O3":25.27,"Temperature":30.8,"Humidity":40.0,"Wind Speed":2.6,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-03-07","PM2.5":163.49,"PM10":125.31,"NO2":63.4,"SO2":14.48,"CO":0.72,"O3":14.5,"Temperature":21.4,"Humidity":45.3,"Wind Speed":1.6,"Month":"Mar","AQI_Category":"Very Unhealthy"},{"City":"Chennai","Date":"2024-03-08","PM2.5":34.19,"PM10":61.71,"NO2":46.86,"SO2":16.35,"CO":1.1,"O3":65.38,"Temperature":31.8,"Humidity":32.2,"Wind Speed":5.3,"Month":"Mar","AQI_Category":"Moderate"},{"City":"Bangalore","Date":"2024-03-09","PM2.5":120.46,"PM10":54.72,"NO2":79.89,"SO2":55.65,"CO":0.43,"O3":40.46,"Temperature":34.1,"Humidity":71.2,"Wind Speed":1.6,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-03-10","PM2.5":53.5,"PM10":106.68,"NO2":48.76,"SO2":39.0,"CO":1.11,"O3":60.88,"Temperature":32.9,"Humidity":32.0,"Wind Speed":2.0,"Month":"Mar","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Mumbai","Date":"2024-03-11","PM2.5":134.14,"PM10":201.14,"NO2":50.93,"SO2":34.27,"CO":0.54,"O3":59.22,"Temperature":28.7,"Humidity":43.3,"Wind Speed":2.1,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-03-12","PM2.5":80.37,"PM10":43.61,"NO2":35.77,"SO2":16.63,"CO":1.02,"O3":23.17,"Temperature":35.8,"Humidity":62.6,"Wind Speed":4.6,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-03-13","PM2.5":146.27,"PM10":129.72,"NO2":16.95,"SO2":34.54,"CO":1.59,"O3":92.0,"Temperature":26.6,"Humidity":37.0,"Wind Speed":2.2,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-03-14","PM2.5":78.09,"PM10":156.27,"NO2":55.66,"SO2":24.59,"CO":2.47,"O3":76.64,"Temperature":22.7,"Humidity":35.6,"Wind Speed":1.4,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-03-15","PM2.5":59.35,"PM10":68.92,"NO2":24.93,"SO2":20.68,"CO":0.68,"O3":108.64,"Temperature":19.6,"Humidity":58.8,"Wind Speed":3.0,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-03-16","PM2.5":177.18,"PM10":60.17,"NO2":41.83,"SO2":58.32,"CO":2.2,"O3":99.88,"Temperature":23.2,"Humidity":39.4,"Wind Speed":4.5,"Month":"Mar","AQI_Category":"Very Unhealthy"},{"City":"Chennai","Date":"2024-03-17","PM2.5":168.7,"PM10":140.22,"NO2":55.73,"SO2":20.4,"CO":1.99,"O3":30.57,"Temperature":24.5,"Humidity":53.4,"Wind Speed":3.5,"Month":"Mar","AQI_Category":"Very Unhealthy"},{"City":"Bangalore","Date":"2024-03-18","PM2.5":58.79,"PM10":60.67,"NO2":58.85,"SO2":20.87,"CO":1.58,"O3":26.98,"Temperature":27.6,"Humidity":59.3,"Wind Speed":0.8,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-03-19","PM2.5":73.86,"PM10":64.19,"NO2":15.07,"SO2":59.45,"CO":1.01,"O3":99.09,"Temperature":23.1,"Humidity":67.5,"Wind Speed":5.1,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-03-20","PM2.5":115.3,"PM10":124.88,"NO2":42.95,"SO2":24.19,"CO":2.34,"O3":101.37,"Temperature":37.3,"Humidity":36.8,"Wind Speed":4.9,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-03-21","PM2.5":170.13,"PM10":72.62,"NO2":15.32,"SO2":45.76,"CO":1.56,"O3":102.6,"Temperature":20.8,"Humidity":73.7,"Wind Speed":1.7,"Month":"Mar","AQI_Category":"Very Unhealthy"},{"City":"Hyderabad","Date":"2024-03-22","PM2.5":46.18,"PM10":69.57,"NO2":75.17,"SO2":41.59,"CO":1.45,"O3":49.47,"Temperature":35.5,"Humidity":51.6,"Wind Speed":5.4,"Month":"Mar","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Delhi","Date":"2024-03-23","PM2.5":90.26,"PM10":107.85,"NO2":47.01,"SO2":21.58,"CO":1.94,"O3":65.3,"Temperature":22.6,"Humidity":79.5,"Wind Speed":2.8,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-03-24","PM2.5":106.97,"PM10":203.16,"NO2":59.94,"SO2":11.43,"CO":2.37,"O3":79.05,"Temperature":24.7,"Humidity":37.7,"Wind Speed":5.3,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-03-25","PM2.5":119.21,"PM10":136.02,"NO2":81.51,"SO2":48.37,"CO":0.63,"O3":44.29,"Temperature":23.0,"Humidity":70.9,"Wind Speed":0.7,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-03-26","PM2.5":111.18,"PM10":177.24,"NO2":80.14,"SO2":23.81,"CO":2.11,"O3":22.17,"Temperature":34.9,"Humidity":37.0,"Wind Speed":2.9,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-03-27","PM2.5":147.57,"PM10":66.99,"NO2":28.34,"SO2":44.72,"CO":1.88,"O3":80.53,"Temperature":31.9,"Humidity":59.8,"Wind Speed":2.0,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-03-28","PM2.5":75.31,"PM10":72.69,"NO2":82.68,"SO2":37.09,"CO":1.18,"O3":60.82,"Temperature":36.9,"Humidity":38.4,"Wind Speed":4.0,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-03-29","PM2.5":100.94,"PM10":150.06,"NO2":11.45,"SO2":52.97,"CO":2.35,"O3":72.16,"Temperature":31.9,"Humidity":80.7,"Wind Speed":4.7,"Month":"Mar","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-03-30","PM2.5":44.41,"PM10":143.73,"NO2":58.54,"SO2":28.33,"CO":1.92,"O3":112.78,"Temperature":36.5,"Humidity":54.8,"Wind Speed":1.2,"Month":"Mar","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Pune","Date":"2024-03-31","PM2.5":177.57,"PM10":191.0,"NO2":19.97,"SO2":55.65,"CO":2.21,"O3":67.07,"Temperature":29.8,"Humidity":51.9,"Wind Speed":0.8,"Month":"Mar","AQI_Category":"Very Unhealthy"},{"City":"Kolkata","Date":"2024-04-01","PM2.5":73.63,"PM10":184.51,"NO2":10.37,"SO2":23.34,"CO":1.18,"O3":69.11,"Temperature":36.4,"Humidity":49.0,"Wind Speed":2.6,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-04-02","PM2.5":138.0,"PM10":121.4,"NO2":27.97,"SO2":29.88,"CO":0.61,"O3":29.4,"Temperature":28.0,"Humidity":53.0,"Wind Speed":6.0,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-04-03","PM2.5":77.98,"PM10":144.51,"NO2":60.58,"SO2":5.72,"CO":1.76,"O3":29.58,"Temperature":37.2,"Humidity":38.2,"Wind Speed":3.0,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-04-04","PM2.5":33.66,"PM10":219.44,"NO2":50.18,"SO2":37.75,"CO":0.45,"O3":92.5,"Temperature":22.2,"Humidity":79.4,"Wind Speed":1.7,"Month":"Apr","AQI_Category":"Moderate"},{"City":"Bangalore","Date":"2024-04-05","PM2.5":50.51,"PM10":46.58,"NO2":47.77,"SO2":36.07,"CO":0.44,"O3":95.31,"Temperature":27.1,"Humidity":58.8,"Wind Speed":3.1,"Month":"Apr","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Pune","Date":"2024-04-06","PM2.5":84.12,"PM10":140.74,"NO2":22.42,"SO2":15.01,"CO":2.2,"O3":114.07,"Temperature":25.5,"Humidity":44.9,"Wind Speed":4.4,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-04-07","PM2.5":85.4,"PM10":44.57,"NO2":22.49,"SO2":44.38,"CO":1.75,"O3":12.98,"Temperature":22.4,"Humidity":42.7,"Wind Speed":4.5,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-04-08","PM2.5":23.15,"PM10":58.74,"NO2":73.99,"SO2":14.82,"CO":1.74,"O3":36.2,"Temperature":20.0,"Humidity":43.4,"Wind Speed":4.8,"Month":"Apr","AQI_Category":"Moderate"},{"City":"Chennai","Date":"2024-04-09","PM2.5":156.91,"PM10":189.44,"NO2":41.77,"SO2":41.74,"CO":0.75,"O3":42.25,"Temperature":35.9,"Humidity":30.7,"Wind Speed":1.0,"Month":"Apr","AQI_Category":"Very Unhealthy"},{"City":"Delhi","Date":"2024-04-10","PM2.5":53.26,"PM10":44.78,"NO2":24.51,"SO2":37.07,"CO":1.23,"O3":108.19,"Temperature":34.3,"Humidity":48.8,"Wind Speed":2.1,"Month":"Apr","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Delhi","Date":"2024-04-11","PM2.5":80.75,"PM10":146.25,"NO2":31.45,"SO2":39.33,"CO":1.2,"O3":70.73,"Temperature":26.7,"Humidity":46.2,"Wind Speed":6.2,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-04-12","PM2.5":142.18,"PM10":65.22,"NO2":79.48,"SO2":31.81,"CO":2.27,"O3":97.98,"Temperature":26.5,"Humidity":31.2,"Wind Speed":2.1,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-04-13","PM2.5":106.66,"PM10":154.03,"NO2":30.63,"SO2":12.66,"CO":2.14,"O3":118.28,"Temperature":28.5,"Humidity":39.4,"Wind Speed":2.1,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-04-14","PM2.5":22.94,"PM10":204.57,"NO2":19.42,"SO2":36.71,"CO":0.9,"O3":70.96,"Temperature":31.0,"Humidity":75.6,"Wind Speed":1.7,"Month":"Apr","AQI_Category":"Moderate"},{"City":"Delhi","Date":"2024-04-15","PM2.5":21.76,"PM10":64.64,"NO2":82.0,"SO2":53.06,"CO":1.61,"O3":76.06,"Temperature":31.3,"Humidity":39.6,"Wind Speed":6.0,"Month":"Apr","AQI_Category":"Moderate"},{"City":"Mumbai","Date":"2024-04-16","PM2.5":87.0,"PM10":108.96,"NO2":51.51,"SO2":7.58,"CO":0.67,"O3":91.18,"Temperature":19.7,"Humidity":63.2,"Wind Speed":2.0,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-04-17","PM2.5":82.29,"PM10":91.96,"NO2":38.45,"SO2":44.55,"CO":0.95,"O3":72.3,"Temperature":27.5,"Humidity":66.5,"Wind Speed":6.1,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-04-18","PM2.5":137.21,"PM10":78.69,"NO2":12.49,"SO2":19.42,"CO":1.61,"O3":15.66,"Temperature":27.9,"Humidity":62.8,"Wind Speed":2.5,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-04-19","PM2.5":143.35,"PM10":59.19,"NO2":16.01,"SO2":45.05,"CO":1.39,"O3":85.72,"Temperature":26.7,"Humidity":43.6,"Wind Speed":5.4,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-04-20","PM2.5":147.91,"PM10":165.05,"NO2":31.77,"SO2":37.46,"CO":1.09,"O3":20.07,"Temperature":36.3,"Humidity":37.5,"Wind Speed":6.2,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-04-21","PM2.5":91.36,"PM10":73.32,"NO2":53.35,"SO2":53.01,"CO":1.91,"O3":98.72,"Temperature":31.2,"Humidity":68.1,"Wind Speed":5.6,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-04-22","PM2.5":59.95,"PM10":128.1,"NO2":27.7,"SO2":59.32,"CO":2.38,"O3":14.34,"Temperature":32.1,"Humidity":80.9,"Wind Speed":1.6,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-04-23","PM2.5":110.87,"PM10":204.79,"NO2":12.72,"SO2":43.36,"CO":0.95,"O3":111.68,"Temperature":37.4,"Humidity":81.9,"Wind Speed":3.3,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-04-24","PM2.5":157.93,"PM10":192.02,"NO2":35.53,"SO2":50.59,"CO":0.38,"O3":75.59,"Temperature":22.6,"Humidity":36.6,"Wind Speed":1.0,"Month":"Apr","AQI_Category":"Very Unhealthy"},{"City":"Chennai","Date":"2024-04-25","PM2.5":131.41,"PM10":101.18,"NO2":67.98,"SO2":8.59,"CO":0.99,"O3":69.34,"Temperature":33.8,"Humidity":47.5,"Wind Speed":4.3,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-04-26","PM2.5":161.76,"PM10":150.86,"NO2":28.64,"SO2":6.34,"CO":2.21,"O3":12.34,"Temperature":35.5,"Humidity":59.1,"Wind Speed":6.1,"Month":"Apr","AQI_Category":"Very Unhealthy"},{"City":"Pune","Date":"2024-04-27","PM2.5":147.81,"PM10":219.63,"NO2":38.06,"SO2":47.2,"CO":1.18,"O3":62.79,"Temperature":30.6,"Humidity":78.1,"Wind Speed":6.4,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Mumbai","Date":"2024-04-28","PM2.5":142.92,"PM10":115.2,"NO2":43.71,"SO2":45.57,"CO":0.83,"O3":22.15,"Temperature":25.1,"Humidity":45.8,"Wind Speed":2.3,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-04-29","PM2.5":57.38,"PM10":47.58,"NO2":11.43,"SO2":59.32,"CO":1.24,"O3":52.28,"Temperature":31.6,"Humidity":42.0,"Wind Speed":6.2,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-04-30","PM2.5":145.82,"PM10":56.09,"NO2":43.41,"SO2":53.35,"CO":2.38,"O3":61.41,"Temperature":30.3,"Humidity":39.2,"Wind Speed":6.4,"Month":"Apr","AQI_Category":"Unhealthy"},{"City":"Pune","Date":"2024-05-01","PM2.5":57.07,"PM10":209.69,"NO2":61.97,"SO2":38.43,"CO":1.43,"O3":35.37,"Temperature":21.5,"Humidity":42.1,"Wind Speed":1.6,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-05-02","PM2.5":144.73,"PM10":103.02,"NO2":14.63,"SO2":58.3,"CO":2.24,"O3":112.05,"Temperature":37.9,"Humidity":39.6,"Wind Speed":2.9,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-05-03","PM2.5":141.32,"PM10":165.28,"NO2":22.31,"SO2":49.87,"CO":0.79,"O3":34.62,"Temperature":28.7,"Humidity":62.6,"Wind Speed":4.0,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-05-04","PM2.5":34.64,"PM10":197.94,"NO2":31.25,"SO2":12.12,"CO":2.26,"O3":115.12,"Temperature":35.2,"Humidity":74.5,"Wind Speed":4.4,"Month":"May","AQI_Category":"Moderate"},{"City":"Mumbai","Date":"2024-05-05","PM2.5":108.14,"PM10":55.66,"NO2":42.68,"SO2":25.5,"CO":0.87,"O3":89.58,"Temperature":27.9,"Humidity":34.5,"Wind Speed":1.8,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-05-06","PM2.5":129.32,"PM10":53.7,"NO2":78.1,"SO2":32.23,"CO":1.36,"O3":75.16,"Temperature":34.5,"Humidity":49.1,"Wind Speed":4.6,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-05-07","PM2.5":110.52,"PM10":88.07,"NO2":80.29,"SO2":48.86,"CO":1.75,"O3":103.56,"Temperature":35.3,"Humidity":69.0,"Wind Speed":5.5,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-05-08","PM2.5":131.6,"PM10":162.43,"NO2":59.49,"SO2":46.4,"CO":0.65,"O3":106.9,"Temperature":35.4,"Humidity":31.6,"Wind Speed":5.5,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-05-09","PM2.5":40.62,"PM10":100.32,"NO2":69.48,"SO2":13.84,"CO":2.1,"O3":101.53,"Temperature":28.1,"Humidity":30.4,"Wind Speed":2.2,"Month":"May","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Bangalore","Date":"2024-05-10","PM2.5":118.71,"PM10":216.61,"NO2":60.55,"SO2":19.29,"CO":1.69,"O3":69.4,"Temperature":33.6,"Humidity":35.9,"Wind Speed":5.1,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Chennai","Date":"2024-05-11","PM2.5":106.6,"PM10":213.34,"NO2":37.35,"SO2":39.79,"CO":2.35,"O3":21.28,"Temperature":36.7,"Humidity":67.8,"Wind Speed":0.9,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-05-12","PM2.5":68.15,"PM10":167.47,"NO2":15.39,"SO2":37.02,"CO":1.06,"O3":78.3,"Temperature":18.9,"Humidity":77.9,"Wind Speed":6.3,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-05-13","PM2.5":175.02,"PM10":174.94,"NO2":20.41,"SO2":46.7,"CO":0.35,"O3":12.43,"Temperature":24.5,"Humidity":56.9,"Wind Speed":5.1,"Month":"May","AQI_Category":"Very Unhealthy"},{"City":"Hyderabad","Date":"2024-05-14","PM2.5":129.33,"PM10":120.26,"NO2":31.89,"SO2":59.84,"CO":1.24,"O3":59.65,"Temperature":21.3,"Humidity":73.7,"Wind Speed":4.7,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-05-15","PM2.5":55.32,"PM10":54.83,"NO2":64.44,"SO2":41.0,"CO":0.9,"O3":114.59,"Temperature":21.0,"Humidity":53.8,"Wind Speed":6.2,"Month":"May","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Bangalore","Date":"2024-05-16","PM2.5":87.16,"PM10":154.93,"NO2":41.81,"SO2":20.08,"CO":2.46,"O3":55.03,"Temperature":35.9,"Humidity":42.6,"Wind Speed":1.8,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-05-17","PM2.5":24.98,"PM10":157.3,"NO2":39.48,"SO2":52.54,"CO":1.34,"O3":116.5,"Temperature":21.7,"Humidity":77.8,"Wind Speed":5.2,"Month":"May","AQI_Category":"Moderate"},{"City":"Kolkata","Date":"2024-05-18","PM2.5":143.35,"PM10":192.06,"NO2":70.88,"SO2":39.44,"CO":0.59,"O3":13.58,"Temperature":36.4,"Humidity":63.9,"Wind Speed":5.3,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-05-19","PM2.5":97.04,"PM10":61.12,"NO2":20.01,"SO2":42.71,"CO":1.25,"O3":32.06,"Temperature":27.8,"Humidity":33.5,"Wind Speed":4.0,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-05-20","PM2.5":63.04,"PM10":183.56,"NO2":34.83,"SO2":30.04,"CO":0.33,"O3":17.97,"Temperature":25.8,"Humidity":56.4,"Wind Speed":4.1,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Kolkata","Date":"2024-05-21","PM2.5":66.67,"PM10":165.1,"NO2":78.81,"SO2":47.89,"CO":0.39,"O3":62.86,"Temperature":20.1,"Humidity":43.3,"Wind Speed":6.4,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Hyderabad","Date":"2024-05-22","PM2.5":42.8,"PM10":129.8,"NO2":59.45,"SO2":43.64,"CO":1.53,"O3":11.07,"Temperature":24.5,"Humidity":58.5,"Wind Speed":1.0,"Month":"May","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Mumbai","Date":"2024-05-23","PM2.5":76.1,"PM10":45.98,"NO2":16.29,"SO2":26.83,"CO":0.59,"O3":72.43,"Temperature":31.8,"Humidity":74.0,"Wind Speed":1.7,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-05-24","PM2.5":46.8,"PM10":58.82,"NO2":60.91,"SO2":43.86,"CO":0.37,"O3":112.98,"Temperature":19.0,"Humidity":59.8,"Wind Speed":4.8,"Month":"May","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Mumbai","Date":"2024-05-25","PM2.5":159.36,"PM10":168.54,"NO2":74.14,"SO2":23.67,"CO":2.09,"O3":18.81,"Temperature":35.9,"Humidity":60.1,"Wind Speed":5.4,"Month":"May","AQI_Category":"Very Unhealthy"},{"City":"Chennai","Date":"2024-05-26","PM2.5":92.37,"PM10":155.84,"NO2":52.11,"SO2":45.24,"CO":0.48,"O3":16.64,"Temperature":22.9,"Humidity":38.8,"Wind Speed":5.7,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Delhi","Date":"2024-05-27","PM2.5":55.07,"PM10":215.66,"NO2":36.95,"SO2":15.02,"CO":2.04,"O3":82.46,"Temperature":28.0,"Humidity":60.5,"Wind Speed":4.8,"Month":"May","AQI_Category":"Unhealthy (Sensitive)"},{"City":"Chennai","Date":"2024-05-28","PM2.5":56.55,"PM10":219.34,"NO2":87.98,"SO2":40.77,"CO":0.74,"O3":84.83,"Temperature":19.4,"Humidity":31.7,"Wind Speed":2.0,"Month":"May","AQI_Category":"Unhealthy"},{"City":"Bangalore","Date":"2024-05-29","PM2.5":94.02,"PM10":196.29,"NO2":68.17,"SO2":45.85,"CO":1.24,"O3":48.05,"Temperature":25.4,"Humidity":84.3,"Wind Speed":0.7,"Month":"May","AQI_Category":"Unhealthy"}];
+
+// ──────────────────────────────────────────────
+//  CONFIG
+// ──────────────────────────────────────────────
+const CITIES=['Bangalore','Chennai','Delhi','Hyderabad','Kolkata','Mumbai','Pune'];
+const MONTHS=['Jan','Feb','Mar','Apr','May'];
+const CC={Bangalore:'#2563eb',Chennai:'#16a34a',Delhi:'#dc2626',Hyderabad:'#d97706',Kolkata:'#7c3aed',Mumbai:'#0891b2',Pune:'#db2777'};
+const AQC={'Good':'#16a34a','Moderate':'#d97706','Unhealthy (Sensitive)':'#ea580c','Unhealthy':'#dc2626','Very Unhealthy':'#7c3aed'};
+const F={city:'All',month:'All',aqi:'All'};
+
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+const grp=(a,k)=>a.reduce((g,r)=>{(g[r[k]]=g[r[k]]||[]).push(r);return g},{});
+const fd=()=>D.filter(r=>(F.city==='All'||r.City===F.city)&&(F.month==='All'||r.Month===F.month)&&(F.aqi==='All'||r.AQI_Category===F.aqi));
+
+// ──────────────────────────────────────────────
+//  CHART.JS DEFAULTS
+// ──────────────────────────────────────────────
+Chart.defaults.font.family="'Plus Jakarta Sans',sans-serif";
+Chart.defaults.font.size=10;
+Chart.defaults.color='#6b7a99';
+
+const BASE={
+  responsive:true,maintainAspectRatio:false,
+  plugins:{
+    legend:{display:false},
+    tooltip:{backgroundColor:'#fff',borderColor:'#e2e6ef',borderWidth:1,titleColor:'#1e2432',bodyColor:'#4a5568',padding:8,cornerRadius:4,boxShadow:'0 2px 6px rgba(0,0,0,.08)'}
+  },
+  scales:{
+    x:{grid:{color:'#f0f2f7',drawBorder:false},ticks:{color:'#9ba3b8',font:{size:9.5}}},
+    y:{grid:{color:'#f0f2f7',drawBorder:false},ticks:{color:'#9ba3b8',font:{size:9.5}}}
+  }
+};
+
+// ──────────────────────────────────────────────
+//  CHARTS
+// ──────────────────────────────────────────────
+let CH={};
+function kill(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
+
+function buildBar(){
+  kill('bar');
+  const d=fd(),cg=grp(d,'City');
+  const labs=Object.keys(cg).sort((a,b)=>avg(cg[b].map(r=>r['PM2.5']))-avg(cg[a].map(r=>r['PM2.5'])));
+  const vals=labs.map(c=>+avg(cg[c].map(r=>r['PM2.5'])).toFixed(1));
+  CH.bar=new Chart(document.getElementById('cBar'),{
+    type:'bar',
+    data:{labels:labs,datasets:[{data:vals,backgroundColor:labs.map(c=>CC[c]+'28'),borderColor:labs.map(c=>CC[c]),borderWidth:1.5,borderRadius:4}]},
+    options:{...BASE,indexAxis:'y',plugins:{...BASE.plugins,tooltip:{...BASE.plugins.tooltip,callbacks:{label:c=>' PM2.5: '+c.raw+' µg/m³'}}}}
+  });
+}
+
+function buildDonut(){
+  kill('donut');
+  const d=fd();
+  const cats=['Good','Moderate','Unhealthy (Sensitive)','Unhealthy','Very Unhealthy'];
+  const counts=cats.map(c=>d.filter(r=>r.AQI_Category===c).length);
+  const total=d.length||1;
+  CH.donut=new Chart(document.getElementById('cDonut'),{
+    type:'doughnut',
+    data:{labels:['Good','Moderate','Sensitive','Unhealthy','Very Unhealthy'],datasets:[{data:counts,backgroundColor:cats.map(c=>AQC[c]+'30'),borderColor:cats.map(c=>AQC[c]),borderWidth:2,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',borderColor:'#e2e6ef',borderWidth:1,titleColor:'#1e2432',bodyColor:'#4a5568',padding:8,callbacks:{label:c=>' '+c.label+': '+c.raw+' ('+Math.round(c.raw/total*100)+'%)'}}}}
+  });
+}
+
+function buildLine(){
+  kill('line');
+  const d=fd();
+  const lg=document.getElementById('lineLegend');
+  const activeCities=[...new Set(d.map(r=>r.City))].sort();
+  lg.innerHTML=activeCities.map(c=>`<span class="leg-item"><span class="leg-dot" style="background:${CC[c]}"></span>${c}</span>`).join('');
+  CH.line=new Chart(document.getElementById('cLine'),{
+    type:'line',
+    data:{
+      labels:MONTHS,
+      datasets:activeCities.map(c=>({
+        label:c,
+        data:MONTHS.map(m=>{const pts=d.filter(r=>r.City===c&&r.Month===m);return pts.length?+avg(pts.map(r=>r['PM2.5'])).toFixed(1):null}),
+        borderColor:CC[c],backgroundColor:CC[c]+'15',
+        tension:.4,pointRadius:3,pointHoverRadius:5,borderWidth:1.8,fill:false
+      }))
+    },
+    options:{...BASE,plugins:{...BASE.plugins,legend:{display:false}},scales:{...BASE.scales,y:{...BASE.scales.y,title:{display:true,text:'µg/m³',color:'#9ba3b8',font:{size:9}}}}}
+  });
+}
+
+function buildStacked(){
+  kill('stacked');
+  const d=fd();
+  const cats=['Good','Moderate','Unhealthy (Sensitive)','Unhealthy','Very Unhealthy'];
+  const cities=[...new Set(d.map(r=>r.City))].sort();
+  CH.stacked=new Chart(document.getElementById('cStacked'),{
+    type:'bar',
+    data:{
+      labels:cities,
+      datasets:cats.map(cat=>({
+        label:cat.replace(' (Sensitive)','(S)'),
+        data:cities.map(c=>d.filter(r=>r.City===c&&r.AQI_Category===cat).length),
+        backgroundColor:AQC[cat]+'55',borderColor:AQC[cat],borderWidth:1,borderRadius:2
+      }))
+    },
+    options:{...BASE,plugins:{...BASE.plugins,legend:{display:true,position:'bottom',labels:{color:'#6b7a99',font:{size:9},boxWidth:10,padding:8}}},scales:{x:{...BASE.scales.x,stacked:true},y:{...BASE.scales.y,stacked:true}}}
+  });
+}
+
+function buildGrouped(){
+  kill('grouped');
+  const d=fd();
+  const cg=grp(d,'City');
+  const cities=Object.keys(cg).sort();
+  CH.grouped=new Chart(document.getElementById('cGrouped'),{
+    type:'bar',
+    data:{
+      labels:cities,
+      datasets:[
+        {label:'NO₂',data:cities.map(c=>+avg(cg[c].map(r=>r.NO2)).toFixed(1)),backgroundColor:'#2563eb22',borderColor:'#2563eb',borderWidth:1.5,borderRadius:3},
+        {label:'SO₂',data:cities.map(c=>+avg(cg[c].map(r=>r.SO2)).toFixed(1)),backgroundColor:'#d9770622',borderColor:'#d97706',borderWidth:1.5,borderRadius:3},
+        {label:'O₃', data:cities.map(c=>+avg(cg[c].map(r=>r.O3)).toFixed(1)), backgroundColor:'#16a34a22',borderColor:'#16a34a',borderWidth:1.5,borderRadius:3}
+      ]
+    },
+    options:{...BASE,plugins:{...BASE.plugins,legend:{display:true,position:'bottom',labels:{color:'#6b7a99',font:{size:9},boxWidth:10,padding:8}}}}
+  });
+}
+
+function buildScatter(){
+  kill('scatter');
+  const d=fd();
+  const cg=grp(d,'City');
+  CH.scatter=new Chart(document.getElementById('cScatter'),{
+    type:'scatter',
+    data:{datasets:Object.keys(cg).map(c=>({label:c,data:cg[c].map(r=>({x:r['Wind Speed'],y:r['PM2.5']})),backgroundColor:CC[c]+'55',borderColor:CC[c],borderWidth:1,pointRadius:3.5,pointHoverRadius:5}))},
+    options:{...BASE,plugins:{...BASE.plugins,legend:{display:false}},
+      scales:{
+        x:{...BASE.scales.x,title:{display:true,text:'Wind Speed (m/s)',color:'#9ba3b8',font:{size:9}}},
+        y:{...BASE.scales.y,title:{display:true,text:'PM2.5',color:'#9ba3b8',font:{size:9}}}
+      }
+    }
+  });
+}
+
+// ──────────────────────────────────────────────
+//  KPIs & STATUS BAR
+// ──────────────────────────────────────────────
+function updateKPIs(){
+  const d=fd();if(!d.length)return;
+  const pm25=d.map(r=>r['PM2.5']);
+  const apm=avg(pm25),apm10=avg(d.map(r=>r.PM10)),ano2=avg(d.map(r=>r.NO2));
+  const mx=d.reduce((a,b)=>b['PM2.5']>a['PM2.5']?b:a);
+  const mn=d.reduce((a,b)=>b['PM2.5']<a['PM2.5']?b:a);
+  const uh=d.filter(r=>['Unhealthy','Very Unhealthy','Hazardous'].includes(r.AQI_Category));
+  document.getElementById('k1').textContent=apm.toFixed(1);
+  document.getElementById('k1f').textContent=`WHO safe: 15 µg/m³`;
+  document.getElementById('k1b').textContent=`${(apm/15).toFixed(1)}× limit`;
+  document.getElementById('k2').textContent=apm10.toFixed(1);
+  document.getElementById('k3').textContent=mx['PM2.5'].toFixed(1);
+  document.getElementById('k3f').textContent=`${mx.City} · ${mx.Date}`;
+  document.getElementById('k4').textContent=mn['PM2.5'].toFixed(1);
+  document.getElementById('k4f').textContent=`${mn.City} · ${mn.Date}`;
+  document.getElementById('k5').textContent=(uh.length/d.length*100).toFixed(1)+'%';
+  document.getElementById('k5f').textContent=`${uh.length} of ${d.length} readings`;
+  document.getElementById('k6').textContent=ano2.toFixed(1);
+  document.getElementById('liveStat').textContent=`⬤  ${(uh.length/d.length*100).toFixed(0)}% Unhealthy`;
+  // statusbar
+  document.getElementById('sb1').textContent=d.length;
+  document.getElementById('sb2').textContent=F.city==='All'?'All Cities':F.city;
+  document.getElementById('sb3').textContent=F.month==='All'?'All':F.month;
+  document.getElementById('sb4').textContent=F.aqi==='All'?'All':F.aqi;
+}
+
+// ──────────────────────────────────────────────
+//  FILTER
+// ──────────────────────────────────────────────
+function setF(type,val){
+  F[type]=val;
+  document.querySelectorAll('.filterbar .chip').forEach(b=>{
+    const oc=b.getAttribute('onclick');
+    if(oc===`setF('${type}','${val}')`)b.classList.add('active');
+    else if(oc&&oc.startsWith(`setF('${type}'`))b.classList.remove('active');
+  });
+  updateAll();
+}
+
+function resetFilters(){
+  F.city='All';F.month='All';F.aqi='All';
+  document.querySelectorAll('.filterbar .chip').forEach(b=>{
+    const oc=b.getAttribute('onclick');
+    b.classList.toggle('active',oc&&(oc===`setF('city','All')`||oc===`setF('month','All')`||oc===`setF('aqi','All')`));
+  });
+  updateAll();
+}
+
+function updateAll(){
+  updateKPIs();
+  buildBar();buildDonut();buildLine();buildStacked();buildGrouped();buildScatter();
+}
+
+// ──────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────
+updateAll();
+</script>
+</body>
+</html>
